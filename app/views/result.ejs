@@ -1,0 +1,16 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>短縮URLサービス</title>
+  </head>
+
+  <body>
+    <h1>短縮URLサービス</h1>
+    <% if (error) { %>
+      <p><%= error %></p>
+    <% } else { %>
+      <p>短縮URL: <a href="<%= short_url %>"><%= short_url %></a></p>
+    <% } %>
+    <p><a href="">トップページに戻る</a></p>
+  </body>
+</html>

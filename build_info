@@ -1,0 +1,2 @@
+DOCKER_REPO=_username_/shorturl
+DOCKER_TAG=ver1.0
