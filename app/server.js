@@ -14,7 +14,7 @@ var DBPASS = process.env.NODE_DBPASS;
 
 var sys = require('sys'),
     express = require('express'),
-   ejs = require('ejs'),
+    ejs = require('ejs'),
     mysql = require('mysql'),
     crypto = require('crypto')
 
@@ -28,10 +28,10 @@ function db_access(callback) {
         database: DBNAME
     });
     client.connect(function(err) {
-	if (err) {
-	    throw err;
-	}
-	callback(client);
+        if (err) {
+            throw err;
+        }
+        callback(client);
     });
 }
 
@@ -48,69 +48,69 @@ app.get('/', function(req, res) {
 // Receive URL to shorten
 app.post('/', function(req, res) {
     var locals = {
-	error: null,
-	short_url: null
+        error: null,
+        short_url: null
     };
 
     if (!req.body.url) {
-	locals.error = 'URLが入力されていません。';
+        locals.error = 'URLが入力されていません。';
     } else if (req.body.url > 256) {
-	locals.error = 'URLが長すぎます。';
+        locals.error = 'URLが長すぎます。';
     }
     if (locals.error) {
-	res.render('result.ejs', {
-	    locals: locals
-	});
-	return;
+        res.render('result.ejs', {
+            locals: locals
+        });
+        return;
     }
 
     function render_short_url(hash) {
         locals.short_url = req.protocol + '://' + req.get('host')
             + '/' + hash;
-	res.render('result.ejs', {
-	    locals: locals
-	});
+        res.render('result.ejs', {
+            locals: locals
+        });
     }
 
     db_access(function(client) {
         var md5 = crypto.createHash('md5');
         md5.update(req.body.url, 'utf8');
         var hash = md5.digest('hex').substr(0,8);
-	client.query(
-	    'INSERT INTO url_list (hash,url) VALUES (?,?)',
+        client.query(
+            'INSERT INTO url_list (hash,url) VALUES (?,?)',
             [hash, req.body.url],
-	    function(err, results) {
-		if (err && err.number != mysql.ERROR_DUP_ENTRY) {
-		    client.end();
-		    throw err;
-		}
+            function(err, results) {
+                if (err && err.number != mysql.ERROR_DUP_ENTRY) {
+                    client.end();
+                    throw err;
+                }
                 render_short_url(hash);
-	        return;
-	    }
-	);
+                return;
+            }
+        );
     });
 });
 
 // Redirect to a new page 
 app.get(/^\/([0-9a-z]+)$/, function(req, res) {
     db_access(function(client) {
-	client.query(
-	    'SELECT url FROM url_list WHERE hash = ?',
+        client.query(
+            'SELECT url FROM url_list WHERE hash = ?',
             [req.params[0]],
-	    function(err, results, fields) {
-		if (err) {
-		    client.end();
-		    throw err;
-		}
-		client.end();
+            function(err, results, fields) {
+                if (err) {
+                    client.end();
+                    throw err;
+                }
+                client.end();
 
-		if (results.length == 0) {
-		    res.send('Not Found', 404);
-		} else {
-		    res.redirect(results[0].url);
-		}
-	    }
-	);
+                if (results.length == 0) {
+                    res.send('Not Found', 404);
+                } else {
+                    res.redirect(results[0].url);
+                }
+            }
+        );
     });
 });
 
