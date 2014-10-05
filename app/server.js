@@ -28,10 +28,7 @@ function db_access(callback) {
         database: DBNAME
     });
     client.connect(function(err) {
-        if (err) {
-            throw err;
-        }
-        callback(client);
+        callback(client, err);
     });
 }
 
@@ -58,21 +55,15 @@ app.post('/', function(req, res) {
         locals.error = 'URLが長すぎます。';
     }
     if (locals.error) {
-        res.render('result.ejs', {
-            locals: locals
-        });
+        res.render('result.ejs', { locals: locals });
         return;
     }
 
-    function render_short_url(hash) {
-        locals.short_url = req.protocol + '://' + req.get('host')
-            + '/' + hash;
-        res.render('result.ejs', {
-            locals: locals
-        });
-    }
-
-    db_access(function(client) {
+    db_access(function(client, err) {
+        if (err) {
+            res.send('Internal Error', 500);
+            return;
+        }
         var md5 = crypto.createHash('md5');
         md5.update(req.body.url, 'utf8');
         var hash = md5.digest('hex').substr(0,8);
@@ -82,9 +73,12 @@ app.post('/', function(req, res) {
             function(err, results) {
                 if (err && err.number != mysql.ERROR_DUP_ENTRY) {
                     client.end();
-                    throw err;
+                    res.send('Internal Error', 500);
+                    return;
                 }
-                render_short_url(hash);
+                locals.short_url =
+                    req.protocol + '://' + req.get('host') + '/' + hash;
+                res.render('result.ejs', { locals: locals });
                 return;
             }
         );
@@ -93,14 +87,19 @@ app.post('/', function(req, res) {
 
 // Redirect to a new page 
 app.get(/^\/([0-9a-z]+)$/, function(req, res) {
-    db_access(function(client) {
+    db_access(function(client, err) {
+        if (err) {
+            res.send('Internal Error', 500);
+            return;
+        }
         client.query(
             'SELECT url FROM url_list WHERE hash = ?',
             [req.params[0]],
             function(err, results, fields) {
                 if (err) {
                     client.end();
-                    throw err;
+                    res.send('Internal Error', 500);
+                    return;
                 }
                 client.end();
 
@@ -116,3 +115,4 @@ app.get(/^\/([0-9a-z]+)$/, function(req, res) {
 
 app.listen(PORT, LISTEN);
 console.log('Server running at %s:%s', LISTEN, PORT);
+
