@@ -3,7 +3,7 @@
 FROM enakai00/centos:centos6
 MAINTAINER Etsuji Nakai
 
-RUN yum -y install https://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+RUN yum -y install epel-release
 RUN yum -y install nodejs nodejs-mysql nodejs-ejs nodejs-express
 RUN mkdir /root/app
 ADD app /root/app
